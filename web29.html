@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cryptic Hunt</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f0f2f5;
+      text-align: center;
+      background-image: url("detective_background.jpeg");
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .clue {
+      display: none;
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #e8f4ff;
+      border-radius: 8px;
+      border-left: 4px solid #1a73e8;
+    }
+    .clue.active {
+      display: block;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .final-answer {
+      display: none;
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #e6ffe6;
+      border-radius: 8px;
+      border-left: 4px solid #28a745;
+    }
+    .final-answer.active {
+      display: block;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .answer-form {
+      margin: 20px 0;
+    }
+    input[type="text"] {
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      width: 200px;
+      margin-right: 10px;
+    }
+    button {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #1557b0;
+    }
+    .progress {
+      margin: 20px 0;
+      color: #666;
+    }
+    .feedback {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .feedback.error {
+      background-color: #ffe6e6;
+      color: #d32f2f;
+    }
+    .feedback.success {
+      background-color: #e6ffe6;
+      color: #388e3c;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    table {
+      border-collapse: collapse;
+      margin: 20px auto;
+    }
+    td {
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      border: 1px solid black;
+    }
+    input {
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      font-size: 18px;
+      border: none;
+      text-transform: uppercase;
+    }
+    
+    /* Crossword grid styles */
+    .crossword-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 40px);
+      gap: 1px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .grid-cell {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      background: white;
+    }
+    
+    /* Crossword answers styles */
+    .crossword-answers {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .puzzle-input {
+      padding: 8px;
+      border: 2px solid #333;
+      border-radius: 4px;
+      text-transform: uppercase;
+      width: 120px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cryptic Hunt</h1>
+    <div class="progress" id="progress">Clue 1 of 3</div>
+
+    <!-- Clue 1 -->
+    <div class="clue active" id="clue1">
+      <h3>First Clue</h3>
+      <img src="skype.png" height="400px" width="400px">
+      <h3>Guess the Brand by it's logo :</h3>
+      <div class="answer-form" id="answerForm1">
+        <input type="text" id="answerInput" placeholder="Enter your answer">
+        <button onclick="checkAnswer()">Submit Answer</button>
+        <div id="feedback" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Clue 2 -->
+    <div class="clue" id="clue2">
+      <h3>Second Clue</h3>
+      <h3>Guess the Brand : </h3>
+      <img src="armani.jpg" height="400px" width="600px">
+      <div class="answer-form" id="answerForm2">
+        <input type="text" id="answerInput2" placeholder="Enter your answer">
+        <button onclick="checkAnswer2()">Submit Answer</button>
+        <div id="feedback2" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Clue 3 -->
+    <div class="clue" id="clue3">
+      <h3>Third Clue</h3>
+      <h2>Find the 3 words related to Daily Appliences.</h2>
+      <div id="crosswordGrid" class="crossword-grid"></div>
+      <!-- Button to check crossword answers -->
+      <button onclick="checkCrosswordAnswers()" style="display: block; margin: 20px auto;">Submit Answers</button>
+      <!-- Crossword answer inputs -->
+      <div class="crossword-answers">
+        <input type="text" id="answer1" placeholder="Word 1" class="puzzle-input">
+        <input type="text" id="answer2" placeholder="Word 2" class="puzzle-input">
+        <input type="text" id="answer3" placeholder="Word 3" class="puzzle-input">
+      </div>
+      <div id="crosswordFeedback" class="feedback"></div>
+    </div>
+
+    <!-- Final Answer (displayed upon completion) -->
+    <div class="final-answer" id="finalAnswer">
+      <h3>Congratulations! You've Completed the Hunt!</h3>
+      <p>You've solved all three riddles.</p>
+    </div>
+  </div>
+
+  <script>
+    // Data for answers
+    let currentClue = 1;
+    const totalClues = 3;
+    const answers = {
+      1: "SKYPE",
+      2: "ARMANI",
+      3: {
+        words: ["BOWLING", "KABADDI", "CHESS"]
+      }
+    };
+
+    // Render the crossword grid
+    const gridData = [
+      ['B','D','L','P','Q','W','X','M','L','T'],
+      ['M','K','I','D','A','M','I','K','I','V'],
+      ['G','X','J','S','Y','U','W','A','G','L'],
+      ['S','D','C','R','C','T','C','B','H','C'],
+      ['T','R','U','H','X','O','T','A','T','R'],
+      ['X','E','U','V','E','I','S','D','O','A'],
+      ['A','S','Y','F','R','S','E','D','K','L'],
+      ['T','E','A','E','S','I','S','I','O','Q'],
+      ['D','A','G','N','I','F','Y','O','W','Y'],
+      ['P','O','I','U','Y','T','R','E','N','M']
+    ];
+
+    window.onload = function() {
+      const grid = document.getElementById('crosswordGrid');
+      gridData.forEach(row => {
+        row.forEach(letter => {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.textContent = letter;
+          grid.appendChild(cell);
+        });
+      });
+    };
+
+    // Update the progress text
+    function updateProgress() {
+      const progressText = currentClue <= totalClues 
+        ? `Clue ${currentClue} of ${totalClues}` 
+        : 'Complete!';
+      document.getElementById('progress').textContent = progressText;
+    }
+
+    // Check answer for Clue 1
+    function checkAnswer() {
+      const userAnswer = document.getElementById('answerInput').value.trim().toUpperCase();
+      const feedback = document.getElementById('feedback');
+      if (userAnswer === answers[1]) {
+        feedback.textContent = "Correct! Moving to the next clue...";
+        feedback.className = "feedback success";
+        setTimeout(() => {
+          document.getElementById('clue1').classList.remove('active');
+          document.getElementById('clue2').classList.add('active');
+          currentClue++;
+          updateProgress();
+          // Reset input and feedback
+          document.getElementById('answerInput').value = '';
+          feedback.textContent = '';
+        }, 1500);
+      } else {
+        feedback.textContent = "Incorrect answer. Try again!";
+        feedback.className = "feedback error";
+      }
+    }
+
+    // Check answer for Clue 2
+    function checkAnswer2() {
+      const userAnswer = document.getElementById('answerInput2').value.trim().toUpperCase();
+      const feedback = document.getElementById('feedback2');
+      if (userAnswer === answers[2]) {
+        feedback.textContent = "Correct! Moving to the next clue...";
+        feedback.className = "feedback success";
+        setTimeout(() => {
+          document.getElementById('clue2').classList.remove('active');
+          document.getElementById('clue3').classList.add('active');
+          currentClue++;
+          updateProgress();
+          // Reset input and feedback
+          document.getElementById('answerInput2').value = '';
+          feedback.textContent = '';
+        }, 1500);
+      } else {
+        feedback.textContent = "Incorrect answer. Try again!";
+        feedback.className = "feedback error";
+      }
+    }
+
+    // Check answers for Clue 3 (Crossword)
+    function checkCrosswordAnswers() {
+      const ans1 = document.getElementById('answer1').value.trim().toUpperCase();
+      const ans2 = document.getElementById('answer2').value.trim().toUpperCase();
+      const ans3 = document.getElementById('answer3').value.trim().toUpperCase();
+      const userAnswers = [ans1, ans2, ans3];
+      const expected = answers[3].words.slice(); // copy of the expected words
+      
+      // Sort both arrays to ignore order differences
+      userAnswers.sort();
+      expected.sort();
+      
+      const feedback = document.getElementById('crosswordFeedback');
+      
+      // Compare the sorted arrays element by element
+      let allCorrect = true;
+      for (let i = 0; i < expected.length; i++) {
+        if (userAnswers[i] !== expected[i]) {
+          allCorrect = false;
+          break;
+        }
+      }
+      
+      if (allCorrect) {
+        feedback.textContent = "Correct! You've solved the crossword.";
+        feedback.className = "feedback success";
+        setTimeout(() => {
+          // Since clue 3 is the final clue, show final answer message
+          document.getElementById('clue3').classList.remove('active');
+          document.getElementById('finalAnswer').classList.add('active');
+          currentClue++;
+          updateProgress();
+        }, 1500);
+      } else {
+        feedback.textContent = "One or more answers are incorrect. Please try again!";
+        feedback.className = "feedback error";
+      }
+    }
+
+    document.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+});
+
+  </script>
+</body>
+</html>
